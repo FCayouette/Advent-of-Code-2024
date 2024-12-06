@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
 
 	for (int x = 0; x < map.size(); ++x)
 		for (int y = 0; y < map.front().size(); ++y)
-			if (map[x][y] == '.')
+			if (map[x][y] == '.' && visited.find({x, y}) != visited.cend())
 			{
 				map[x][y] = '#';
 
