@@ -7,19 +7,18 @@ struct Block
 	u64 start, size, id;
 	u64 GetCheckSum() const
 	{
-		u64 result = 0;
-		for (u64 x = start, i = 0; i < size; ++i, ++x)
-			result += x * id;
-		return result;
+		u64 end = start + size;
+		return (end * (end - 1ull) - start * (start - 1ull)) * id / 2ll;
 	}
 	bool operator<(const Block& b) const { return start < b.start; }
 };
 
 int main(int argc, char* argv[])
 {
+	auto ChronoStart = std::chrono::high_resolution_clock::now();
 	if (argc < 2)
 	{
-		std::cout << "Usage: AoC24DayXX.exe inputFilename\n";
+		std::cout << "Usage: AoC24Day09.exe inputFilename\n";
 		return -1;
 	}
 	std::ifstream in(argv[1]);
@@ -29,9 +28,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	u64 part1 = 0, part2 = 0;
 	std::string line;
-
 	in >> line;
 	bool file = true;
 	u64 pos = 0, fileId = 0;
@@ -41,9 +38,7 @@ int main(int argc, char* argv[])
 	{
 		if (u64 v = c - '0'; v > 0)
 		{
-			Block b;
-			b.start = pos;
-			b.size = v;
+			Block b {pos, v, 0ull};
 			pos += v;
 			if (file)
 			{
@@ -95,50 +90,30 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	for (const Block& b : compacted)
-		part1 += b.GetCheckSum();
-
 	std::swap(files, fBackup);
 
-	for (int i = files.size() - 1; i >= 1; --i)
+	for (auto f = files.rbegin(), fEnd = std::prev(files.rend()); f != fEnd; ++f)
 	{
-		Block &b = files[i];
-		auto iterCheck = spaces.end();
-		for (const Block& e : spaces)
+		Block &b = *f;
+		for (auto iter = spaces.begin(); iter != spaces.end() && iter->start < b.start; ++iter)
 		{
-			if (b.start < e.start)
-				break;
-			if (e.size >= b.size)
+			if (iter->size >= b.size)
 			{
-				Block newSpace = b;
-				auto s = const_cast<Block*>(&e);
-				b.start = e.start;
-				s->size -= b.size;
-				s->start += b.size;
-				iterCheck = spaces.insert(newSpace).first;
+				f->start = iter->start;
+				if (iter->size == b.size)
+					spaces.erase(iter);
+				else
+				{
+					auto s = const_cast<Block*>(&*iter);
+					s->size -= b.size;
+					s->start += b.size;
+				}
 				break;
 			}
 		}
-		if (iterCheck != spaces.end())
-		{
-			auto prev = iterCheck;
-			std::array toErase = { spaces.end(), spaces.end() };
-			--prev;
-			for (int i = 0; i < 2 && iterCheck != spaces.cend(); ++iterCheck)
-				if (prev->start + prev->size == iterCheck->start && iterCheck->size)
-				{
-					const_cast<Block*>(&*prev)->size += iterCheck->size;
-					toErase[i] = iterCheck;
-				}
-				else
-					++prev;
-			for (int i = 0; i < 2; ++i)
-				if (toErase[i] != spaces.end())
-					spaces.erase(toErase[i]);
-		}
 	}
 
-	for (const Block & b : files)
-		part2 += b.GetCheckSum();
-	std::cout << std::format("Part 1: {}\nPart 2: {}\n", part1, part2);
+	auto Acc = [](u64 a, const Block& b) { return a + b.GetCheckSum(); };
+	std::cout << std::format("Part 1: {}\nPart 2: {}\n", std::accumulate(compacted.cbegin(), compacted.cend(), 0ull, Acc), std::accumulate(files.cbegin(), files.cend(), 0ull, Acc));
+	std::cout << std::format("Duration: {}\n", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ChronoStart));
 }
