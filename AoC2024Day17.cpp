@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 	auto ChronoStart = std::chrono::high_resolution_clock::now();
 	if (argc < 2)
 	{
-		std::cout << "Usage: AoC24DayXX.exe inputFilename\n";
+		std::cout << "Usage: AoC24Day17.exe inputFilename\n";
 		return -1;
 	}
 	std::ifstream in(argv[1]);
