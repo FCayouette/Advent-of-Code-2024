@@ -5,6 +5,7 @@ import std.core;
 
 int main(int argc, char* argv[])
 {
+	auto ChronoStart = std::chrono::high_resolution_clock::now();
 	if (argc < 2)
 	{
 		std::cout << "Usage: AoC24Day01.exe inputFilename\n";
@@ -17,7 +18,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	int part1 = 0, part2 = 0, a, b;
+	int part2 = 0, a, b;
 	std::vector<int> left, right;
 	while (in >> a >> b)
 	{
@@ -28,11 +29,20 @@ int main(int argc, char* argv[])
 	std::sort(ALL(left));
 	std::sort(ALL(right));
 
-	for (int i = 0; i < left.size(); ++i)
+	auto l = left.cbegin(), r = right.cbegin();
+	while (l != left.cend() && r != right.cend())
 	{
-		part1 += std::abs(left[i] - right[i]);
-		part2 += std::count(ALLc(right), left[i]) * left[i];
+		int countL = 1, countR = 0;
+		while (l + countL != left.cend() && *(l+countL) == *l)
+			++countL;
+		while (r != right.cend() && *r < *l)
+			++r;
+		while (r != right.cend() && *r == *l)
+			++countR, ++r;
+		part2 += *l * countL * countR;
+		l += countL;
 	}
 		
-	std::cout << std::format("Part 1: {}\nPart 2: {}\n", part1, part2);
+	std::cout << std::format("Part 1: {}\nPart 2: {}\n", std::inner_product(ALLc(left), right.cbegin(), 0, std::plus(), [](int a, int b) { return std::abs(a - b); }), part2);
+	std::cout << std::format("Duration: {}\n", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - ChronoStart));
 }
